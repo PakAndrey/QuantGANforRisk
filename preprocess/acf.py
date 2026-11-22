@@ -12,21 +12,23 @@ def rolling_window(x, k, sparse=True):
 
     Args:
         x ([2d array]): x contains the time series in the shape (timestep, sample).
-        k ([int]): window length.
-        sparse (bool): Cut off the final windows containing NA. Defaults to True.
+        k ([int]): positive window length.
+        sparse (bool): Keep only complete windows. If False, pad the final
+            windows with NaN. Defaults to True.
 
     Returns:
         [3d array]: array of rolling windows in the shape (window, timestep, sample).
     """    
-    out = np.full([k, *x.shape], np.nan)
-    N = len(x)
-    for i in range(k):
-        out[i, :N-i] = x[i:]
-            
-    if not sparse:
-        return out
+    if k < 1:
+        raise ValueError("window length must be positive")
 
-    return out[:, :-(k-1)]
+    n = len(x)
+    n_windows = max(n - k + 1, 0) if sparse else n
+    out = np.full((k, n_windows, *x.shape[1:]), np.nan)
+    for lag in range(min(k, n)):
+        values = x[lag:lag + n_windows]
+        out[lag, :len(values)] = values
+    return out
 
 def acf(x, k, le=False):
 
